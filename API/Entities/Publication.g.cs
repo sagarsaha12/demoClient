@@ -11,8 +11,9 @@ namespace demoClient.Entities
     public class Publication
     {
         /// <summary>
-        /// Required field Id of the Publication 
+        /// Primary key for the Publication 
         /// </summary>
+        [Key]
         [Required]
         public Guid Id { get; set; }
         /// <summary>

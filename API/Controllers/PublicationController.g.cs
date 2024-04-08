@@ -10,6 +10,12 @@ using System.Linq.Expressions;
 
 namespace demoClient.Controllers
 {
+    /// <summary>
+    /// Controller responsible for managing publication-related operations in the API.
+    /// </summary>
+    /// <remarks>
+    /// This controller provides endpoints for adding, retrieving, updating, and deleting publication information.
+    /// </remarks>
     [Route("api/publication")]
     [Authorize]
     public class PublicationController : ControllerBase
@@ -34,7 +40,7 @@ namespace demoClient.Controllers
         {
             _context.Publication.Add(model);
             this._context.SaveChanges();
-            return Ok(true);
+            return Ok(new { model.Id });
         }
 
         /// <summary>Retrieves a list of publications based on specified filters</summary>
@@ -94,6 +100,98 @@ namespace demoClient.Controllers
 
             var paginatedResult = result.Skip(skip).Take(pageSize).ToList();
             return Ok(paginatedResult);
+        }
+
+        /// <summary>Retrieves a specific publication by its primary key</summary>
+        /// <param name="id">The primary key of the publication</param>
+        /// <returns>The publication data</returns>
+        [HttpGet]
+        [Route("{id:Guid}")]
+        [UserAuthorize("Publication",Entitlements.Read)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [Produces("application/json")]
+        public IActionResult GetById([FromRoute] Guid id)
+        {
+            var entityData = _context.Publication.IncludeRelated().FirstOrDefault(entity => entity.Id == id);
+            return Ok(entityData);
+        }
+
+        /// <summary>Deletes a specific publication by its primary key</summary>
+        /// <param name="id">The primary key of the publication</param>
+        /// <returns>The result of the operation</returns>
+        [HttpDelete]
+        [UserAuthorize("Publication",Entitlements.Delete)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [Produces("application/json")]
+        [Route("{id:Guid}")]
+        public IActionResult DeleteById([FromRoute] Guid id)
+        {
+            var entityData = _context.Publication.IncludeRelated().FirstOrDefault(entity => entity.Id == id);
+            if (entityData == null)
+            {
+                return NotFound();
+            }
+
+            _context.Publication.Remove(entityData);
+            var status = this._context.SaveChanges();
+            return Ok(new { status });
+        }
+
+        /// <summary>Updates a specific publication by its primary key</summary>
+        /// <param name="id">The primary key of the publication</param>
+        /// <param name="updatedEntity">The publication data to be updated</param>
+        /// <returns>The result of the operation</returns>
+        [HttpPut]
+        [UserAuthorize("Publication",Entitlements.Update)]
+        [Route("{id:Guid}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [Produces("application/json")]
+        public IActionResult UpdateById(Guid id, [FromBody] Publication updatedEntity)
+        {
+            if (id != updatedEntity.Id)
+            {
+                return BadRequest("Mismatched Id");
+            }
+
+            this._context.Publication.Update(updatedEntity);
+            var status = this._context.SaveChanges();
+            return Ok(new { status });
+        }
+
+        /// <summary>Updates a specific publication by its primary key</summary>
+        /// <param name="id">The primary key of the publication</param>
+        /// <param name="updatedEntity">The publication data to be updated</param>
+        /// <returns>The result of the operation</returns>
+        [HttpPatch]
+        [UserAuthorize("Publication",Entitlements.Update)]
+        [Route("{id:Guid}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [Produces("application/json")]
+        public IActionResult UpdateById(Guid id, [FromBody] JsonPatchDocument<Publication> updatedEntity)
+        {
+            if (updatedEntity == null)
+                return BadRequest("Patch document is missing.");
+            var existingEntity = this._context.Publication.FirstOrDefault(t => t.Id == id);
+            if (existingEntity == null)
+                return NotFound();
+            updatedEntity.ApplyTo(existingEntity, ModelState);
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+            this._context.Publication.Update(existingEntity);
+            var status = this._context.SaveChanges();
+            return Ok(new { status });
         }
     }
 }

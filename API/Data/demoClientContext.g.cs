@@ -21,6 +21,7 @@ namespace demoClient.Data
             modelBuilder.Entity<Role>().HasKey(a => a.Id);
             modelBuilder.Entity<Author>().HasKey(a => a.Id);
             modelBuilder.Entity<Books>().HasKey(a => a.Id);
+            modelBuilder.Entity<Publication>().HasKey(a => a.Id);
             modelBuilder.Entity<UserInRole>().HasOne(a => a.TenantId_Tenant).WithMany().HasForeignKey(c => c.TenantId);
             modelBuilder.Entity<UserInRole>().HasOne(a => a.RoleId_Role).WithMany().HasForeignKey(c => c.RoleId);
             modelBuilder.Entity<UserInRole>().HasOne(a => a.UserId_User).WithMany().HasForeignKey(c => c.UserId);
